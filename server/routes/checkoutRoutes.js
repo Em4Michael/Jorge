@@ -1,9 +1,9 @@
 const express = require('express');
-const { getMarkets, processPayment } = require('../controllers/checkoutController');
+const { checkout } = require('../controllers/checkoutController');
+const authMiddleware = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
-router.get('/checkout/markets', getMarkets);
-router.post('/checkout/process-payment', processPayment);
+router.post('/checkout', authMiddleware, checkout);
 
 module.exports = router;

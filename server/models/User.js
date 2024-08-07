@@ -1,6 +1,17 @@
 // models/User.js
 const mongoose = require('mongoose');
 
+const addressSchema = new mongoose.Schema({
+  address: {
+    type: String,
+    required: true,
+  },
+  isActive: {
+    type: Boolean,
+    default: false,
+  },
+});
+
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -25,6 +36,7 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin', 'superadmin'],
     default: 'user',
   },
+  deliveryAddresses: [addressSchema],
 });
 
 module.exports = mongoose.model('User', userSchema);

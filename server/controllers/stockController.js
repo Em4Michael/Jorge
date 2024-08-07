@@ -1,16 +1,19 @@
-
+// controllers/stockController.js
+const Stock = require('../models/Stock');
 
 exports.getStockAvailability = async (req, res) => {
-    // Example: Fetch from database
-    const stock = await Stock.find(); // Assuming you have a Stock model
-  
-    res.status(200).json(stock);
-  };
-
+    try {
+        const stock = await Stock.find();
+        res.status(200).json(stock);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
 
 exports.getAllStock = async (req, res) => {
     try {
-        const stock = await Stock.find(); // Fetch all stock items from the database
+        const stock = await Stock.find();
         res.status(200).json(stock);
     } catch (error) {
         console.error(error);
@@ -18,10 +21,9 @@ exports.getAllStock = async (req, res) => {
     }
 };
 
-// Function to get stock by ID
 exports.getStockById = async (req, res) => {
     try {
-        const stock = await Stock.findById(req.params.id); // Find stock by ID
+        const stock = await Stock.findById(req.params.id);
         if (!stock) {
             return res.status(404).json({ error: 'Stock not found' });
         }
@@ -32,36 +34,51 @@ exports.getStockById = async (req, res) => {
     }
 };
 
-// Function to create a new stock item
 exports.createStock = async (req, res) => {
     try {
-        const newStock = new Stock(req.body); // Create a new stock item
-        await newStock.save(); // Save the new stock item to the database
+        const { item, quantity } = req.body;
+
+        // Allow for new entries of existing stock items
+        const newStock = new Stock({ item, quantity });
+        await newStock.save();
         res.status(201).json(newStock);
     } catch (error) {
-        console.error(error);
+        console.error('Error creating stock:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
 
-// Function to update stock by ID
 exports.updateStock = async (req, res) => {
     try {
-        const stock = await Stock.findByIdAndUpdate(req.params.id, req.body, { new: true }); // Update stock item
+        const { id } = req.params; // Use ID from params
+        const { quantity } = req.body; // Use item quantity from the request body
+
+        if (!id || quantity == null) {
+            return res.status(400).json({ error: 'ID and quantity are required' });
+        }
+
+        // Find the stock by ID and update
+        const stock = await Stock.findByIdAndUpdate(
+            id,
+            { quantity, date: new Date() },
+            { new: true }
+        );
+
         if (!stock) {
             return res.status(404).json({ error: 'Stock not found' });
         }
-        res.status(200).json(stock);
+
+        res.status(200).json({ message: 'Stock item updated', data: stock });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
 
-// Function to delete stock by ID
+
 exports.deleteStock = async (req, res) => {
     try {
-        const stock = await Stock.findByIdAndDelete(req.params.id); // Delete stock item
+        const stock = await Stock.findByIdAndDelete(req.params.id);
         if (!stock) {
             return res.status(404).json({ error: 'Stock not found' });
         }
