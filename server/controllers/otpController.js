@@ -16,10 +16,8 @@ const sendOtp = async (req, res) => {
     return res.status(400).json({ error: 'Phone number is required' });
   }
 
-  // Format the phone number to E.164 format
   const formattedPhoneNumber = formatPhoneNumber(phoneNumber, '234'); // Assuming '234' is the default country code
 
-  // Generate a 6-digit OTP
   const otp = crypto.randomInt(100000, 999999).toString();
 
   try {

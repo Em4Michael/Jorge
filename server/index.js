@@ -5,8 +5,11 @@ const userRoutes = require('./routes/userRoutes');
 const stockRoutes = require('./routes/stockRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const checkoutRoutes = require('./routes/checkoutRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 const otpRoutes = require('./routes/otpRoutes');
 const capacityRoutes = require('./routes/capacityRoutes');
+const feeRoutes = require('./routes/feeRoutes'); 
+
 
 require('dotenv').config();
 
@@ -24,7 +27,9 @@ app.use('/api', authRoutes);
 app.use('/api', userRoutes);
 app.use('/api', stockRoutes);
 app.use('/api', cartRoutes);
-app.use('/api', checkoutRoutes);
+app.use('/api', checkoutRoutes); 
+app.use('/api', orderRoutes); 
+app.use('/api', feeRoutes); 
 app.use('/api', otpRoutes); 
 app.use('/api', capacityRoutes); 
 

@@ -1,7 +1,5 @@
 // controllers/capacityController.js
 const WeeklyCapacity = require('../models/WeeklyCapacity');
-const adminMiddleware = require('../middlewares/adminMiddleware');
-
 
 exports.updateCapacity = async (req, res) => {
   try {

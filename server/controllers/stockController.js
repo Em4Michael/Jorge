@@ -36,11 +36,18 @@ exports.getStockById = async (req, res) => {
 
 exports.createStock = async (req, res) => {
     try {
-        const { item, quantity } = req.body;
+        const { item, quantity, pricePerCarton, weeklyCapacity } = req.body;
 
-        // Allow for new entries of existing stock items
-        const newStock = new Stock({ item, quantity });
+        // Create new stock item
+        const newStock = new Stock({
+            item,
+            quantity,
+            pricePerCarton,
+            weeklyCapacity
+        });
+
         await newStock.save();
+
         res.status(201).json(newStock);
     } catch (error) {
         console.error('Error creating stock:', error);
@@ -48,33 +55,39 @@ exports.createStock = async (req, res) => {
     }
 };
 
+// Update an existing stock item
 exports.updateStock = async (req, res) => {
     try {
-        const { id } = req.params; // Use ID from params
-        const { quantity } = req.body; // Use item quantity from the request body
+        const { id } = req.params;
+        const { quantity, pricePerCarton, weeklyCapacity } = req.body;
 
-        if (!id || quantity == null) {
-            return res.status(400).json({ error: 'ID and quantity are required' });
+        if (!quantity || !pricePerCarton || !weeklyCapacity) {
+            return res.status(400).json({ error: 'Quantity, price per carton, and weekly capacity are required' });
         }
 
-        // Find the stock by ID and update
-        const stock = await Stock.findByIdAndUpdate(
-            id,
-            { quantity, date: new Date() },
-            { new: true }
-        );
-
-        if (!stock) {
-            return res.status(404).json({ error: 'Stock not found' });
+        // Find the latest stock document
+        const latestStock = await Stock.findOne({ _id: id }).sort({ createdAt: -1 }).exec();
+        if (!latestStock) {
+            return res.status(404).json({ error: 'Stock item not found' });
         }
 
-        res.status(200).json({ message: 'Stock item updated', data: stock });
+        // Create a new stock document with updated values
+        const updatedStock = new Stock({
+            item: latestStock.item,
+            quantity,
+            pricePerCarton,
+            weeklyCapacity,
+            createdAt: new Date(),
+        });
+
+        await updatedStock.save();
+
+        res.status(200).json({ message: 'Stock updated successfully', data: updatedStock });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
-
 
 exports.deleteStock = async (req, res) => {
     try {

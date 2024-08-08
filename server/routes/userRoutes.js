@@ -6,6 +6,7 @@ const {
     getAllDeliveryAddresses,
     getAllUsers,
     updateUserRole, 
+    updateUserEmail,
 } = require('../controllers/userController');
 
 const { authMiddleware, superAdminMiddleware } = require('../middlewares/authMiddleware');
@@ -19,5 +20,6 @@ router.delete('/address', authMiddleware, deleteDeliveryAddress);
 router.get('/addresses/:userId', authMiddleware, getAllDeliveryAddresses);
 router.get('/users', authMiddleware, superAdminMiddleware, getAllUsers);
 router.put('/user/users/role', authMiddleware, superAdminMiddleware, updateUserRole);
+router.put('/user/email', authMiddleware, updateUserEmail);
 
 module.exports = router;

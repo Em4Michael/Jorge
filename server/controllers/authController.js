@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const otpStore = require('../utils/otpStore'); // Utility for managing OTPs
-
+const { sendOtp } = require('./otpController'); 
 
 const signup = async (req, res) => {
   const { name, phoneNumber, email, password } = req.body;
@@ -77,4 +77,62 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { signup, login };
+
+// Request to initiate forget password
+const requestPasswordReset = async (req, res) => {
+  const { phoneNumber } = req.body;
+
+  try {
+    const user = await User.findOne({ phoneNumber });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Reuse the sendOtp function to send the OTP
+    await sendOtp(req, res);
+  } catch (err) {
+    console.error('Error requesting password reset:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// Confirm OTP and reset password
+const resetPassword = async (req, res) => {
+  const { phoneNumber, otp, newPassword, confirmPassword } = req.body;
+
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+  }
+
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({ error: 'Passwords do not match' });
+  }
+
+  try {
+    const isOtpVerified = otpStore.isVerified(phoneNumber);
+    if (!isOtpVerified) {
+      return res.status(400).json({ error: 'OTP not verified or invalid' });
+    }
+
+    const user = await User.findOne({ phoneNumber });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    await user.save();
+
+    // Clear the OTP after successful password reset
+    otpStore.clearOtp(phoneNumber);
+
+    res.status(200).json({ message: 'Password reset successful' });
+  } catch (err) {
+    console.error('Error resetting password:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+module.exports = { signup, login, requestPasswordReset, resetPassword };

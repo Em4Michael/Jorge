@@ -1,6 +1,5 @@
 const User = require('../models/User');
 
-// Helper function to check if user is owner or superadmin
 const isOwnerOrSuperAdmin = (req, userId) => {
   return req.user._id.toString() === userId || req.user.role === 'superadmin';
 };
@@ -142,6 +141,28 @@ const updateUserRole = async (req, res) => {
   }
 };
 
+const updateUserEmail = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+      const user = await User.findById(req.user._id);
+      if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+      }
+
+      if (email) {
+          user.email = email;
+          await user.save();
+          return res.status(200).json({ message: 'Email updated successfully' });
+      } else {
+          return res.status(400).json({ error: 'Email is required' });
+      }
+  } catch (err) {
+      console.error('Error updating email:', err);
+      res.status(500).json({ error: 'Server error' });
+  }
+};
+
 module.exports = {
   createDeliveryAddress,
   updateDeliveryAddress,
@@ -149,4 +170,5 @@ module.exports = {
   getAllDeliveryAddresses,
   getAllUsers,
   updateUserRole,
+  updateUserEmail,
 };
