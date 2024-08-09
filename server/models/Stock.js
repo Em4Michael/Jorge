@@ -1,4 +1,3 @@
-// models/Stock.js
 const mongoose = require('mongoose');
 
 const stockSchema = new mongoose.Schema({
@@ -13,6 +12,18 @@ const stockSchema = new mongoose.Schema({
     pricePerCarton: {
         type: Number,
         required: true,
+    },
+    expectedPercent: {
+        type: Number,
+        default: 90, 
+    },
+    stemAmount: {
+        type: Number,
+        default: 2, 
+    },
+    totalPlantAmount: {
+        type: Number,
+        default: 500, 
     },
     createdAt: {
         type: Date,

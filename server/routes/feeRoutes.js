@@ -1,4 +1,3 @@
-// routes/feeRoutes.js
 const express = require('express');
 const {
   createFee,

@@ -1,4 +1,3 @@
-// controllers/otpController.js
 const { Vonage } = require('@vonage/server-sdk');
 const otpStore = require('../utils/otpStore');
 const formatPhoneNumber = require('../utils/formatPhoneNumber');
@@ -16,12 +15,11 @@ const sendOtp = async (req, res) => {
     return res.status(400).json({ error: 'Phone number is required' });
   }
 
-  const formattedPhoneNumber = formatPhoneNumber(phoneNumber, '234'); // Assuming '234' is the default country code
+  const formattedPhoneNumber = formatPhoneNumber(phoneNumber, '234'); 
 
   const otp = crypto.randomInt(100000, 999999).toString();
 
   try {
-    // Use Promises with Vonage API to handle responses
     vonage.sms
       .send({
         to: formattedPhoneNumber,
@@ -30,7 +28,6 @@ const sendOtp = async (req, res) => {
       })
       .then((responseData) => {
         if (responseData.messages[0].status === '0') {
-          // Store OTP with phoneNumber as key
           otpStore.storeOtp(phoneNumber, otp);
           return res.json({ message: 'OTP sent successfully' });
         } else {
@@ -64,7 +61,7 @@ const verifyOtp = (req, res) => {
   const storedOtp = otpStore.getOtp(phoneNumber);
 
   if (storedOtp === otp) {
-    otpStore.markAsVerified(phoneNumber); // Mark the OTP as verified
+    otpStore.markAsVerified(phoneNumber); 
     return res.json({ message: 'OTP verified successfully' });
   } else {
     return res.status(400).json({ error: 'Invalid OTP' });

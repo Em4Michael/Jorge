@@ -1,4 +1,3 @@
-// controllers/checkoutController.js
 const Flutterwave = require('flutterwave-node-v3');
 const flw = new Flutterwave(process.env.FLUTTERWAVE_PUBLIC_KEY, process.env.FLUTTERWAVE_SECRET_KEY);
 const Cart = require('../models/Cart');
@@ -9,25 +8,21 @@ const Fee = require('../models/Fee');
 
 exports.checkout = async (req, res) => {
     try {
-        const user = req.user; // Assuming the user is authenticated and req.user contains user details
+        const user = req.user; 
         const { paymentMethod, currency, cardDetails, transferDetails, deliveryAddressId } = req.body;
 
-        // Fetch the user's cart
         const cart = await Cart.findOne({ user: user._id }).populate('items.item');
         if (!cart) {
             return res.status(404).json({ error: 'Cart not found' });
         }
 
-        // Fetch user details
         const userDetail = await User.findById(user._id);
         if (!userDetail) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        // Determine delivery address
         let deliveryAddress;
         if (deliveryAddressId) {
-            // Use provided delivery address ID
             const address = userDetail.deliveryAddresses.id(deliveryAddressId);
             if (address) {
                 deliveryAddress = address.address;
@@ -35,7 +30,6 @@ exports.checkout = async (req, res) => {
                 return res.status(404).json({ error: 'Delivery address not found' });
             }
         } else {
-            // Use the most recent active delivery address
             const activeAddress = userDetail.deliveryAddresses.find(addr => addr.isActive);
             if (activeAddress) {
                 deliveryAddress = activeAddress.address;
@@ -44,7 +38,6 @@ exports.checkout = async (req, res) => {
             }
         }
 
-        // Fetch the most recent fee
         const fee = await Fee.findOne().sort({ _id: -1 });
         if (!fee) {
             return res.status(404).json({ error: 'Fee not found' });
@@ -52,12 +45,11 @@ exports.checkout = async (req, res) => {
 
         const { deliveryFee, taxRate } = fee;
         const subtotal = cart.total;
-        const total = subtotal + deliveryFee + (subtotal * taxRate); // Calculate the final total amount
+        const total = subtotal + deliveryFee + (subtotal * taxRate); 
 
         let paymentPayload = {};
         let response = {};
 
-        // Handle card payment
         if (paymentMethod === 'card') {
             paymentPayload = {
                 card_number: cardDetails.card_number,
@@ -65,18 +57,17 @@ exports.checkout = async (req, res) => {
                 expiry_month: cardDetails.expiry_month,
                 expiry_year: cardDetails.expiry_year,
                 currency: currency || 'NGN',
-                amount: total, // Use the calculated total amount
+                amount: total, 
                 fullname: userDetail.name,
                 phone_number: userDetail.phoneNumber,
                 email: userDetail.email,
                 tx_ref: `tx-${Date.now()}`,
                 redirect_url: 'http://your-redirect-url.com',
-                enckey: process.env.FLUTTERWAVE_ENCRYPTION_KEY, // Ensure this key is set in your environment variables
+                enckey: process.env.FLUTTERWAVE_ENCRYPTION_KEY,
             };
 
             response = await flw.Charge.card(paymentPayload);
         }
-        // Handle transfer payment
         else if (paymentMethod === 'transfer') {
             paymentPayload = {
                 amount: total,
@@ -97,14 +88,13 @@ exports.checkout = async (req, res) => {
                 user: user._id,
                 items: cart.items,
                 total: total,
-                address: deliveryAddress, // Make sure this field is provided
-                paymentMethod: paymentMethod, // Save the payment method used
+                address: deliveryAddress, 
+                paymentMethod: paymentMethod, 
                 status: 'paid'
             });
 
             await newOrder.save();
 
-            // Update stock quantities
             for (const cartItem of cart.items) {
                 const stockItem = await Stock.findById(cartItem.item._id);
                 if (stockItem) {
@@ -113,7 +103,6 @@ exports.checkout = async (req, res) => {
                 }
             }
 
-            // Clear the user's cart
             await Cart.findByIdAndDelete(cart._id);
 
             return res.status(200).json({ message: 'Payment processed successfully', data: response });

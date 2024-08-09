@@ -1,5 +1,3 @@
-// utils/validateFields.js
-
 const validateFields = (name, phoneNumber, password, confirmPassword) => {
   const errors = {};
 

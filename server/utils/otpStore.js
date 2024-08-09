@@ -1,7 +1,7 @@
 const otpStorage = new Map();
 
 const storeOtp = (phoneNumber, otp) => {
-  const expiresIn = Date.now() + 5 * 60 * 1000; // 5 minutes from now
+  const expiresIn = Date.now() + 5 * 60 * 1000; 
   otpStorage.set(phoneNumber, { otp, expiresIn, verified: false });
 };
 
@@ -10,7 +10,7 @@ const getOtp = (phoneNumber) => {
   if (!otpData) return null;
   if (Date.now() > otpData.expiresIn) {
     otpStorage.delete(phoneNumber);
-    return null; // OTP expired
+    return null; 
   }
   return otpData.otp;
 };

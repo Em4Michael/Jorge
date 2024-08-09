@@ -13,7 +13,6 @@ const { authMiddleware, superAdminMiddleware } = require('../middlewares/authMid
 
 const router = express.Router();
 
-// Route for getting all users, accessible only with authentication
 router.post('/address', authMiddleware, createDeliveryAddress);
 router.put('/address', authMiddleware, updateDeliveryAddress);
 router.delete('/address', authMiddleware, deleteDeliveryAddress);

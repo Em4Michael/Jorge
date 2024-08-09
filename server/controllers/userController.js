@@ -4,7 +4,6 @@ const isOwnerOrSuperAdmin = (req, userId) => {
   return req.user._id.toString() === userId || req.user.role === 'superadmin';
 };
 
-// Create Delivery Address
 const createDeliveryAddress = async (req, res) => {
   const { address, userId } = req.body;
 
@@ -28,7 +27,6 @@ const createDeliveryAddress = async (req, res) => {
   }
 };
 
-// Update Delivery Address
 const updateDeliveryAddress = async (req, res) => {
   const { addressId, address, isActive, userId } = req.body;
 
@@ -59,7 +57,6 @@ const updateDeliveryAddress = async (req, res) => {
   }
 };
 
-// Delete Delivery Address
 const deleteDeliveryAddress = async (req, res) => {
   const { addressId, userId } = req.body;
 
@@ -83,7 +80,6 @@ const deleteDeliveryAddress = async (req, res) => {
   }
 };
 
-// Get All Delivery Addresses
 const getAllDeliveryAddresses = async (req, res) => {
   const { userId } = req.params;
 
@@ -104,10 +100,9 @@ const getAllDeliveryAddresses = async (req, res) => {
   }
 };
 
-// Get All User Information (Superadmin Only)
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select('-password'); // Exclude passwords
+    const users = await User.find().select('-password'); 
     res.status(200).json(users);
   } catch (err) {
     console.error('Error getting users:', err);
@@ -115,7 +110,6 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-// Update user role using phone number
 const updateUserRole = async (req, res) => {
   const { phoneNumber, role } = req.body;
 

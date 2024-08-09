@@ -1,37 +1,32 @@
-// controllers/authController.js
-
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const otpStore = require('../utils/otpStore'); // Utility for managing OTPs
+const otpStore = require('../utils/otpStore'); 
 const { sendOtp } = require('./otpController'); 
 
 const signup = async (req, res) => {
   const { name, phoneNumber, email, password } = req.body;
 
   try {
-    // Check if the phone number is verified
     if (!otpStore.isVerified(phoneNumber)) {
       return res.status(400).json({ error: 'Phone number not verified' });
     }
 
-    // Check if the user already exists
+   
     let user = await User.findOne({ phoneNumber });
     if (user) {
       return res.status(400).json({ error: 'User already exists' });
     }
 
-    // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create a new user with the default role
     user = new User({
       name,
       phoneNumber,
       email: email || null,
       password: hashedPassword,
-      role: 'user', // Default role
+      role: 'user', 
     });
 
     await user.save();
@@ -78,7 +73,6 @@ const login = async (req, res) => {
 };
 
 
-// Request to initiate forget password
 const requestPasswordReset = async (req, res) => {
   const { phoneNumber } = req.body;
 
@@ -88,7 +82,6 @@ const requestPasswordReset = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Reuse the sendOtp function to send the OTP
     await sendOtp(req, res);
   } catch (err) {
     console.error('Error requesting password reset:', err);
@@ -96,7 +89,6 @@ const requestPasswordReset = async (req, res) => {
   }
 };
 
-// Confirm OTP and reset password
 const resetPassword = async (req, res) => {
   const { phoneNumber, otp, newPassword, confirmPassword } = req.body;
 
@@ -119,13 +111,11 @@ const resetPassword = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Hash the new password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
 
     await user.save();
 
-    // Clear the OTP after successful password reset
     otpStore.clearOtp(phoneNumber);
 
     res.status(200).json({ message: 'Password reset successful' });

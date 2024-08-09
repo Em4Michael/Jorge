@@ -1,7 +1,5 @@
-// controllers/feeController.js
 const Fee = require('../models/Fee');
 
-// Create a new fee
 exports.createFee = async (req, res) => {
   try {
     const { deliveryFee, taxRate } = req.body;
@@ -16,7 +14,6 @@ exports.createFee = async (req, res) => {
   }
 };
 
-// Get the most recent fee
 exports.getRecentFee = async (req, res) => {
   try {
     const fee = await Fee.findOne().sort({ createdAt: -1 });
@@ -30,7 +27,6 @@ exports.getRecentFee = async (req, res) => {
   }
 };
 
-// Update the most recent fee
 exports.updateRecentFee = async (req, res) => {
     try {
       const { deliveryFee, taxRate } = req.body;
@@ -39,11 +35,10 @@ exports.updateRecentFee = async (req, res) => {
         return res.status(400).json({ error: 'Delivery fee and tax rate are required' });
       }
   
-      // Find and update the most recent fee entry
       const updatedFee = await Fee.findOneAndUpdate(
         {},
         { deliveryFee, taxRate, updatedAt: new Date() },
-        { new: true, sort: { _id: -1 } } // Sort by _id in descending order to get the most recent
+        { new: true, sort: { _id: -1 } } 
       );
   
       if (!updatedFee) {
@@ -58,7 +53,6 @@ exports.updateRecentFee = async (req, res) => {
   };
   
 
-// Get all fees
 exports.getAllFees = async (req, res) => {
   try {
     const fees = await Fee.find();
@@ -69,7 +63,6 @@ exports.getAllFees = async (req, res) => {
   }
 };
 
-// Get a specific fee by ID
 exports.getFeeById = async (req, res) => {
   try {
     const fee = await Fee.findById(req.params.id);
