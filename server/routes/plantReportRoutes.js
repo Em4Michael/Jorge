@@ -1,5 +1,3 @@
-// routes/plantReportRoutes.js
-
 const express = require('express');
 const { logProductivity, reportHealthStatus, getPlantReports } = require('../controllers/plantReportController');
 const { authMiddleware, adminMiddleware } = require('../middlewares/authMiddleware');

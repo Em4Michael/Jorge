@@ -35,81 +35,52 @@ exports.getStockById = async (req, res) => {
 
 exports.createStock = async (req, res) => {
     try {
-        const { 
-            item, 
-            quantity, 
-            pricePerCarton, 
-            weeklyCapacity, 
-            expectedPercent = 90,  // Default to 90 if not provided
-            stemAmount = 2,  // Default to 2 if not provided
-            totalPlantAmount = 500  // Default to 500 if not provided
-        } = req.body;
-
-        // Calculate expected productivity based on provided values or defaults
-        const expectedProductivity = expectedPercent / 100 * stemAmount * totalPlantAmount;
-
-        const newStock = new Stock({
-            item,
-            quantity,
-            pricePerCarton,
-            weeklyCapacity,
-            expectedPercent,
-            stemAmount,
-            totalPlantAmount,
-            expectedProductivity,  // Include the calculated expected productivity
-        });
-
-        await newStock.save();
-
-        res.status(201).json(newStock);
+      const { item, quantity, pricePerCarton, stemAmount, totalPlantAmount, weeklyCapacity } = req.body;
+  
+      const newStock = new Stock({
+        item,
+        quantity,
+        pricePerCarton,
+        stemAmount,
+        totalPlantAmount,
+        weeklyCapacity,
+      });
+  
+      await newStock.save();
+  
+      res.status(201).json({ message: 'Stock created successfully', stock: newStock });
     } catch (error) {
-        console.error('Error creating stock:', error);
-        res.status(500).json({ error: 'Internal server error' });
+      console.error('Error creating stock:', error);
+      res.status(500).json({ error: 'Internal server error' });
     }
-};
-
-
-
-exports.updateStock = async (req, res) => {
+  };
+  
+  exports.updateStock = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { quantity, pricePerCarton, weeklyCapacity } = req.body;
-
-        if (!quantity || !pricePerCarton || !weeklyCapacity) {
-            return res.status(400).json({ error: 'All fields are required' });
-        }
-
-        const latestStock = await Stock.findOne({ _id: id }).sort({ createdAt: -1 }).exec();
-        if (!latestStock) {
-            return res.status(404).json({ error: 'Stock item not found' });
-        }
-
-        // Calculate expected productivity
-        const expectedProductivity = (latestStock.expectedPercent / 100) * latestStock.stemAmount * latestStock.totalPlantAmount;
-
-        const adjustedQuantity = (quantity * expectedProductivity) / 100;
-
-        const updatedStock = new Stock({
-            item: latestStock.item,
-            quantity: adjustedQuantity,
-            pricePerCarton,
-            expectedPercent: latestStock.expectedPercent,
-            stemAmount: latestStock.stemAmount,
-            totalPlantAmount: latestStock.totalPlantAmount,
-            expectedProductivity,
-            weeklyCapacity,
-            createdAt: new Date(),
-        });
-
-        await updatedStock.save();
-
-        res.status(200).json({ message: 'Stock updated successfully', data: updatedStock });
+      const { id } = req.params;
+      const { item, quantity, pricePerCarton, stemAmount, totalPlantAmount, weeklyCapacity } = req.body;
+  
+      const stock = await Stock.findById(id);
+      if (!stock) {
+        return res.status(404).json({ error: 'Stock item not found' });
+      }
+  
+      stock.item = item || stock.item;
+      stock.quantity = quantity || stock.quantity;
+      stock.pricePerCarton = pricePerCarton || stock.pricePerCarton;
+      stock.stemAmount = stemAmount || stock.stemAmount;
+      stock.totalPlantAmount = totalPlantAmount || stock.totalPlantAmount;
+      stock.weeklyCapacity = weeklyCapacity || stock.weeklyCapacity;
+  
+      await stock.save();
+  
+      res.status(200).json({ message: 'Stock updated successfully', stock });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+      console.error('Error updating stock:', error);
+      res.status(500).json({ error: 'Internal server error' });
     }
-};
-
+  };
+  
 
 exports.deleteStock = async (req, res) => {
     try {

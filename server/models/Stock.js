@@ -13,10 +13,6 @@ const stockSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
-    expectedPercent: {
-        type: Number,
-        default: 90, 
-    },
     stemAmount: {
         type: Number,
         default: 2, 
@@ -36,7 +32,11 @@ const stockSchema = new mongoose.Schema({
     weeklyCapacity: {
         type: Number,
         required: true
-    }
+    },
+    expectedProductivity: {
+        type: Number,
+        default: 0,
+      },
 },
     {
         timestamps: true
