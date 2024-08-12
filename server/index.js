@@ -29,7 +29,7 @@ app.use('/api', checkoutRoutes);
 app.use('/api', feeRoutes); 
 app.use('/api', otpRoutes);  
 app.use('/api', plantReportRoutes);
-app.use('/api/devices', deviceRoutes); // New device routes
+app.use('/api/devices', deviceRoutes); 
 
 
 

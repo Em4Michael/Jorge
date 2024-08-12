@@ -2,51 +2,45 @@ const WebSocket = require('ws');
 const { saveSensorData } = require('../controllers/sensorDataController');
 
 const createWebSocketServer = (server) => {
-  // Create a WebSocket server instance attached to the provided HTTP server
   const wss = new WebSocket.Server({ server });
 
-  // Listen for incoming WebSocket connections
   wss.on('connection', (socket) => {
     console.log('WebSocket connection established');
 
-    // Listen for messages from the client
     socket.on('message', async (message) => {
-      const messageString = message.toString();
-      console.log('Received message:', messageString); // Log the raw message
+      console.log('Received message:', message.toString()); // Log raw message
 
-      if (messageString.startsWith('toggle:')) {
-        const pinName = messageString.substring(7);
-        console.log(`Toggling ${pinName}`);
+      try {
+        const messageString = message.toString();
+        console.log('Converted message:', messageString); // Log converted string
 
-        // Broadcast the toggle message to all connected clients
+        const sensorData = JSON.parse(messageString); // Parse JSON
+        console.log('Parsed sensor data:', sensorData); // Log parsed JSON
+
+        // Save sensor data
+        const savedData = await saveSensorData(sensorData);
+        console.log('Sensor data saved:', savedData);
+
+        // Broadcast to all clients
         wss.clients.forEach((client) => {
           if (client.readyState === WebSocket.OPEN) {
-            client.send(`toggle:${pinName}`);
+            client.send(JSON.stringify(sensorData));
           }
         });
-      } else {
-        try {
-          const sensorData = JSON.parse(messageString); // Parse the JSON data
-          console.log('Parsed sensor data:', sensorData); // Log the parsed JSON data
-          
-          // Save the parsed sensor data
-          const savedData = await saveSensorData(sensorData);
-          console.log('Sensor data saved:', savedData);
-
-          // Broadcast the sensor data to all connected clients
-          wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-              client.send(JSON.stringify(sensorData));
-            }
-          });
-        } catch (error) {
-          console.error('Error handling WebSocket message:', error);
-        }
+      } catch (error) {
+        console.error('Error handling WebSocket message:', error.message);
       }
-    });  
-  }); 
- 
-  // Log when the WebSocket server is ready
+    });
+
+    socket.on('error', (error) => {
+      console.error('WebSocket error:', error.message);
+    });
+
+    socket.on('close', () => {
+      console.log('WebSocket connection closed');
+    });
+  });
+
   console.log('WebSocket server is ready');
 };
 

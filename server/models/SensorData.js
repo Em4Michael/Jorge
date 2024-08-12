@@ -11,7 +11,7 @@ const sensorDataSchema = new mongoose.Schema({
   HI: Number,
   Access: String,
   Exist: String,
-  timestamp: { type: Date, default: Date.now }, // New timestamp field
+  timestamp: { type: Date, default: Date.now },
 });
 
 const SensorData = mongoose.model('SensorData', sensorDataSchema);
