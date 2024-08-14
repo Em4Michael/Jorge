@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prime Grow</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <h1 class="Title">ESP32 Control</h1>
+  <div class="sensor-container">
+    <div class="toggle-switch">
+      <label class="switch-label">
+        <input type="checkbox" onclick="togglePin('E_motor_Down')">
+        <span class="toggle-slider"></span>
+        Window Down <!-- <span id="motorDownState">Off</span> -->
+      </label>
+    </div>
+
+    <div class="toggle-switch">
+      <label class="switch-label">
+        <input type="checkbox" onclick="togglePin('E_motor_Up')">
+        <span class="toggle-slider"></span>
+        Window Up <!-- <span id="motorUpState">Off</span> -->
+      </label>
+    </div>
+
+    <label class="toggle-switch">
+      <input type="checkbox" onclick="togglePin('E_Fan')">
+      <span class="toggle-slider"></span>
+      Fan <!-- <span id="fanState">Off</span> -->
+    </label>
+
+    <label class="toggle-switch">
+      <input type="checkbox" onclick="togglePin('E_Pump')">
+      <span class="toggle-slider"></span>
+      Pump <!-- <span id="pumpState">Off</span> -->
+    </label>
+
+    <label class="toggle-switch">
+      <input type="checkbox" onclick="togglePin('E_pest')">
+      <span class="toggle-slider"></span>
+      Pest <!-- <span id="pestState">Off</span> -->
+    </label>
+
+    <label class="toggle-switch">
+      <input type="checkbox" onclick="togglePin('E_Light')">
+      <span class="toggle-slider"></span>
+      Light <!-- <span id="lightState">Off</span> -->
+    </label>
+
+    <label class="toggle-switch">
+      <input type="checkbox" onclick="togglePin('E_Door')">
+      <span class="toggle-slider"></span>
+      Door <!-- <span id="doorState">Off</span> -->
+    </label>
+  </div>
+
+  <div class="Title">
+    <h1>Sensor and Access Data</h1>
+  </div>
+
+  <div class="sensor-container">
+    <div class="circular-progress-bar">
+      <svg width="100" height="100">
+        <circle class="progress-background" cx="50" cy="50" r="45"></circle>
+        <circle id="rainProgress" class="progress-bar bg-blue" cx="50" cy="50" r="45"></circle>
+        <text class="progress-text" x="50%" y="50%" id="rainSensor">0</text>
+      </svg>
+      <p>Rain Sensor</p>
+    </div>
+
+    <div class="circular-progress-bar">
+      <svg width="100" height="100">
+        <circle class="progress-background" cx="50" cy="50" r="45"></circle>
+        <circle id="uvProgress" class="progress-bar bg-green" cx="50" cy="50" r="45"></circle>
+        <text class="progress-text" x="50%" y="50%" id="uvSensor">0.00</text>
+      </svg>
+      <p>UV Sensor</p>
+    </div>
+
+    <div class="circular-progress-bar">
+      <svg width="100" height="100">
+        <circle class="progress-background" cx="50" cy="50" r="45"></circle>
+        <circle id="moistureProgress" class="progress-bar bg-yellow" cx="50" cy="50" r="45"></circle>
+        <text class="progress-text" x="50%" y="50%" id="moistureSensor">0</text>
+      </svg>
+      <p>Moisture Sensor</p>
+    </div>
+
+    <div class="circular-progress-bar">
+      <svg width="100" height="100">
+        <circle class="progress-background" cx="50" cy="50" r="45"></circle>
+        <circle id="temperatureProgress" class="progress-bar bg-orange" cx="50" cy="50" r="45"></circle>
+        <text class="progress-text" x="50%" y="50%" id="temperatureSensor">0°C</text>
+      </svg>
+      <p>Temperature Sensor</p>
+    </div>
+
+    <div class="circular-progress-bar">
+      <svg width="100" height="100">
+        <circle class="progress-background" cx="50" cy="50" r="45"></circle>
+        <circle id="humidityProgress" class="progress-bar bg-red" cx="50" cy="50" r="45"></circle>
+        <text class="progress-text" x="50%" y="50%" id="humiditySensor">0%</text>
+      </svg>
+      <p>Humidity Sensor</p>
+    </div>
+
+    <div class="circular-progress-bar">
+      <svg width="100" height="100">
+        <circle class="progress-background" cx="50" cy="50" r="45"></circle>
+        <circle id="heatIndexProgress" class="progress-bar bg-blue" cx="50" cy="50" r="45"></circle>
+        <text class="progress-text" x="50%" y="50%" id="heatIndexSensor">0.00</text>
+      </svg>
+      <p>Heat Index Sensor</p>
+    </div>
+  </div>
+
+  <div class="Title-access">
+    <h2>Access Data</h2>
+  </div>
+
+  <table id="accessTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Access</th>
+        <th>Exist</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Rows will be dynamically added here -->
+    </tbody>
+  </table>
+
+  <script>
+    const socket = new WebSocket('ws://192.168.0.139:5000/');
+    //const socket = new WebSocket('ws://prime-grow-farm.vercel.app:443');
+
+    socket.onopen = () => {
+      console.log('WebSocket connection established');
+    };
+
+    socket.onmessage = (event) => {
+      console.log('Message from server:', event.data);
+
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.pinName && data.state) {
+          // Handle control message
+          updatePinState(data.pinName, data.state);
+        } else {
+          // Handle sensor data
+          displaySensorData(data);
+          displayAccessData(data);
+        }
+      } catch (error) {
+        console.error('Error parsing message data:', error);
+      }
+    };
+
+    socket.onclose = (event) => {
+      if (event.wasClean) {
+        console.log(`Closed cleanly, code=${event.code}, reason=${event.reason}`);
+      } else {
+        console.error('Connection died');
+      }
+    };
+
+    function togglePin(pinName) {
+      socket.send(JSON.stringify({ type: 'toggle', pinName: pinName }));
+      console.log(`Sent toggle command for pin: ${pinName}`);
+    }
+
+    function updatePinState(pinName, state) {
+      const stateElement = document.getElementById(`${pinName.toLowerCase()}State`);
+      if (stateElement) {
+        stateElement.textContent = state === 'on' ? 'On' : 'Off';
+      }
+      const checkboxElement = document.querySelector(`input[onclick="togglePin('${pinName}')"]`);
+      if (checkboxElement) {
+        checkboxElement.checked = state === 'on';
+      }
+    }
+
+    function displaySensorData(data) {
+      document.getElementById('rainSensor').innerText = data.RN;
+      document.getElementById('uvSensor').innerText = data.UV.toFixed(2);
+      document.getElementById('moistureSensor').innerText = data.MO;
+      document.getElementById('temperatureSensor').innerText = data.TP + '°C';
+      document.getElementById('humiditySensor').innerText = data.HM + '%';
+      document.getElementById('heatIndexSensor').innerText = data.HI.toFixed(2);
+
+      updateProgressBar('rainProgress', data.RN, 10, '');
+      updateProgressBar('uvProgress', data.UV, 10, '');
+      updateProgressBar('moistureProgress', data.MO, 10, '');
+      updateProgressBar('temperatureProgress', data.TP, 100, '°C');
+      updateProgressBar('humidityProgress', data.HM, 100, '%');
+      updateProgressBar('heatIndexProgress', data.HI, 100, '');
+    }
+
+    function displayAccessData(data) {
+      if (data.Access !== null || data.Exist !== null) { // Update the table only if Access or Exist is not null
+        const accessTable = document.getElementById('accessTable').getElementsByTagName('tbody')[0];
+
+        const newRow = accessTable.insertRow(0);
+        newRow.insertCell(0).innerText = data.Date;
+        newRow.insertCell(1).innerText = data.Time;
+        newRow.insertCell(2).innerText = data.Access !== null ? data.Access : 'N/A'; // Display 'N/A' if Access is null
+        newRow.insertCell(3).innerText = data.Exist !== null ? data.Exist : 'N/A'; // Display 'N/A' if Exist is null
+      }
+    }
+
+    function updateProgressBar(progressBarId, value, maxValue, unit) {
+      const progressBar = document.getElementById(progressBarId);
+      if (progressBar) {
+        const progress = (value / maxValue) * 100;
+        const circumference = 2 * Math.PI * progressBar.r.baseVal.value;
+        const offset = circumference - (progress / 100) * circumference;
+        progressBar.style.strokeDasharray = `${circumference} ${circumference}`;
+        progressBar.style.strokeDashoffset = offset;
+        progressBar.parentNode.querySelector('.progress-text').textContent = value.toFixed(2) + unit;
+      }
+    }
+  </script>
+</body>
+
+</html>

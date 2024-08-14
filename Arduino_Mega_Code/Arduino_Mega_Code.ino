@@ -96,7 +96,7 @@ void loop() {
     }
   }
 
-  delay(500);
+  //delay(500);
 
   // Read sensor values
   int rainValue = analogRead(rainPin);
@@ -141,7 +141,7 @@ void loop() {
 String jsonString;
 serializeJson(jsonDocMega, jsonString);
 //jsonString = "{" + jsonString + "}"; // Add markers
-espSerial.println(jsonString);
+//espSerial.println(jsonString);
 
   
  // String jsonString;
@@ -158,7 +158,7 @@ espSerial.println(jsonString);
  // Serial.print(jsonString + '\n');
 
  // espSerial.print("sensor to ESP2 : ");
-//espSerial.print(jsonString + '\n');
+espSerial.print(jsonString + '\n');
 
   // Display values on the LCD
   lcd.clear();
@@ -186,5 +186,5 @@ espSerial.println(jsonString);
   lcd.print(heatIndex);
   lcd.print("C");
 
-  delay(1000);
+  delay(100);
 }

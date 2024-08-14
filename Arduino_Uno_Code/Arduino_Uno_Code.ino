@@ -100,7 +100,7 @@ void loop()
     digitalWrite(3, HIGH);
   }
 
-  delay(100);
+// delay(100);
 }
 
 void sendAccessStatus(String accessType, bool exitStatus) {

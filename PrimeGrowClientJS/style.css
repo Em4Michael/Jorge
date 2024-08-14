@@ -1,0 +1,118 @@
+.Title{
+    text-align: center;
+}
+.Title-access{
+  text-align: center;
+  margin-top: 4rem;
+}
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+    padding-bottom: 2rem;
+  }
+  
+  .toggle-switch input[type="checkbox"] {
+    display: none;
+  }
+  
+  
+  .toggle-slider {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+    background-color: #ccc;
+    border-radius: 34px;
+    transition: .4s;
+  }
+  
+  .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+  }
+  
+  input[type="checkbox"]:checked+.toggle-slider {
+    background-color: #4caf50;
+  }
+  
+  input[type="checkbox"]:checked+.toggle-slider:before {
+    transform: translateX(26px);
+  }
+
+  .sensor-container{
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    margin: 1rem auto;
+    gap: 1rem;
+    text-align: center;
+    padding-bottom: 1rem;
+  }
+  .circular-progress-bar {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .progress-background {
+    fill: none;
+    stroke: #e0e0e0;
+    stroke-width: 10;
+  }
+  
+  .progress-bar {
+    fill: none;
+    stroke-width: 10;
+    stroke-linecap: round;
+    stroke-dasharray: 0, 314;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 0.5s ease-in-out;
+  }
+  
+  .progress-text {
+    text-anchor: middle;
+    dominant-baseline: middle;
+    font-size: 18px;
+    font-weight: bold;
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  .bg-blue {
+    stroke: #007bff;
+  }
+  
+  .bg-green {
+    stroke: #28a745;
+  }
+  
+  .bg-yellow {
+    stroke: #ffc107;
+  }
+  
+  .bg-orange {
+    stroke: #fd7e14;
+  }
+  
+  .bg-red {
+    stroke: #dc3545;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+  
+    to {
+      opacity: 1;
+    }
+  }
+  

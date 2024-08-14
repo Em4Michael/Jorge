@@ -27,8 +27,8 @@ const updatePinState = async (pinName, state) => {
       pinState.state = state;
       pinState.timestamp = new Date();
     }
-
-    await pinState.save();
+ 
+    await pinState.save(); 
 
    // console.log(`Updating pin ${pinName} to state: ${state}`);
     return pinState;

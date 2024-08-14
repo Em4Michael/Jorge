@@ -61,7 +61,7 @@ const createWebSocketServer = (server) => {
                   console.error('Unrecognized message format:', messageString);
               }
           } catch (jsonError) {
-              console.error('Invalid JSON received:', messageString);
+             // console.error('Invalid JSON received:', messageString);
           }
       } catch (error) {
           console.error('Error handling WebSocket message:', error.message);
