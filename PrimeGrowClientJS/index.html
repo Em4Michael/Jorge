@@ -195,7 +195,7 @@
       document.getElementById('humiditySensor').innerText = data.HM + '%';
       document.getElementById('heatIndexSensor').innerText = data.HI.toFixed(2);
 
-      updateProgressBar('rainProgress', data.RN, 10, '');
+      updateProgressBar('rainProgress', data.RN, 100, '');
       updateProgressBar('uvProgress', data.UV, 10, '');
       updateProgressBar('moistureProgress', data.MO, 10, '');
       updateProgressBar('temperatureProgress', data.TP, 100, '°C');
