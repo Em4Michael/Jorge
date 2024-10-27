@@ -11,6 +11,8 @@ const plantReportRoutes = require('./routes/plantReportRoutes');
 const createWebSocketServer = require('./websocket/websocketServer');
 const pinRoutes = require('./routes/pinRoutes');
 const sensorDataRoutes = require('./routes/sensorDataRoutes');
+const salesReportRoutes = require('./routes/salesReportRoutes');
+
 const cors = require('cors');
 
 
@@ -30,6 +32,7 @@ app.use('/api', cartRoutes);
 app.use('/api', checkoutRoutes); 
 app.use('/api', feeRoutes); 
 app.use('/api', otpRoutes);  
+app.use('/api', salesReportRoutes);
 app.use('/api', plantReportRoutes);
 app.use('/api', pinRoutes);
 app.use('/api', sensorDataRoutes);

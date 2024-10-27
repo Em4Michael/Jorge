@@ -7,6 +7,7 @@ const {
     getAllUsers,
     updateUserRole, 
     updateUserEmail,
+    getUserDetails,
 } = require('../controllers/userController');
 
 const { authMiddleware, superAdminMiddleware } = require('../middlewares/authMiddleware');
@@ -20,5 +21,8 @@ router.get('/addresses/:userId', authMiddleware, getAllDeliveryAddresses);
 router.get('/users', authMiddleware, superAdminMiddleware, getAllUsers);
 router.put('/user/users/role', authMiddleware, superAdminMiddleware, updateUserRole);
 router.put('/user/email', authMiddleware, updateUserEmail);
+router.get('/user-details/:userId', authMiddleware, getUserDetails);
 
-module.exports = router;
+
+module.exports = router; 
+  

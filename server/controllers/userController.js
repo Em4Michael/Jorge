@@ -100,6 +100,29 @@ const getAllDeliveryAddresses = async (req, res) => {
   }
 };
 
+const getUserDetails = async (req, res) => {
+  const { userId } = req.params; // Get userId from URL parameters
+
+  try {
+    // Ensure that the authenticated user is either the owner or a superadmin
+    if (!isOwnerOrSuperAdmin(req, userId)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const user = await User.findById(userId).select('-password'); // Exclude password from the response
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+ 
+    res.json(user);
+  } catch (err) {
+    console.error('Error fetching user details:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+
+
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select('-password'); 
@@ -165,4 +188,5 @@ module.exports = {
   getAllUsers,
   updateUserRole,
   updateUserEmail,
+  getUserDetails,
 };

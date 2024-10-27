@@ -9,6 +9,8 @@ const feeSchema = new mongoose.Schema({
         type: Number,
         required: true,
     }
+}, { 
+    timestamps: true  // Automatically adds createdAt and updatedAt fields
 });
 
 module.exports = mongoose.model('Fee', feeSchema);

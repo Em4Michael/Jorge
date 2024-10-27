@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const generateSalesReport = require('../services/salesReportService');
 
 const stockSchema = new mongoose.Schema({
     item: {
@@ -41,5 +42,6 @@ const stockSchema = new mongoose.Schema({
     {
         timestamps: true
     });
+    
 
 module.exports = mongoose.model('Stock', stockSchema);

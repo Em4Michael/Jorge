@@ -24,7 +24,7 @@ const signup = async (req, res) => {
     user = new User({ 
       name, 
       phoneNumber,
-      email: email || null,
+      email: email && email.trim() !== "" ? email : null, // Check if email is empty or just whitespace
       password: hashedPassword,
       role: 'user', 
     });
@@ -38,7 +38,7 @@ const signup = async (req, res) => {
   }
 };
 
-const login = async (req, res) => {
+const login = async (req, res) => { 
   const { phoneNumber, password } = req.body;
 
   try {
@@ -62,15 +62,18 @@ const login = async (req, res) => {
     );
   
     res.json({ 
-      token,
-      role: user.role,
+      token,   
+      role: user.role,  
       userId: user._id,
+      name: user.name, 
+      phoneNumber: user.phoneNumber,
+      email: user.email,
     }); 
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Server error' });
   }
-};
+}; 
 
 
 const requestPasswordReset = async (req, res) => {

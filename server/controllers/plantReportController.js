@@ -1,8 +1,9 @@
 const PlantReport = require('../models/PlantReport');
 const Stock = require('../models/Stock');
+const { calculateExpected } = require('../utils/calculationUtils'); // import the function
 
 const logProductivity = async (req, res) => {
-  const { plantTag, red = 0, yellow = 0, green = 0, flower = 0, estimatedPlants, estimatedAffectedStem, description } = req.body;
+  const { red = 0, yellow = 0, green = 0, flower = 0, estimatedPlants, estimatedAffectedStem, description } = req.body;
 
   try {
     const stock = await Stock.findOne().sort({ createdAt: -1 });
@@ -13,15 +14,9 @@ const logProductivity = async (req, res) => {
 
     const { stemAmount, totalPlantAmount } = stock;
 
-    let plantReport = await PlantReport.findOne({ plantTag });
-
-    if (!plantReport) {
-      plantReport = new PlantReport({ plantTag });
-    }
-
     const totalProduction = 5 * totalPlantAmount * stemAmount;
 
-    const calculateExpected = (stageValue, totalProduction, estimatedPlants, estimatedAffectedStem) => {
+    /* const calculateExpected = (stageValue, totalProduction, estimatedPlants, estimatedAffectedStem) => {
       const adjustmentFactor = estimatedPlants * estimatedAffectedStem;
       let adjustment = 0;
 
@@ -33,9 +28,9 @@ const logProductivity = async (req, res) => {
         return totalProduction + adjustment;
       }
       return totalProduction;
-    };
+    }; */
 
-    const amountRed = calculateExpected(red, totalProduction, estimatedPlants, estimatedAffectedStem);
+    const amountRed = calculateExpected(red, totalProduction,   estimatedAffectedStem);
     const amountYellow = calculateExpected(yellow, totalProduction, estimatedPlants, estimatedAffectedStem);
     const amountGreen = calculateExpected(green, totalProduction, estimatedPlants, estimatedAffectedStem);
     const amountFlower = calculateExpected(flower, totalProduction, estimatedPlants, estimatedAffectedStem);
@@ -59,15 +54,26 @@ const logProductivity = async (req, res) => {
       },
     };
 
-    plantReport.productivity = {
-      red: red || plantReport.productivity.red,
-      yellow: yellow || plantReport.productivity.yellow,
-      green: green || plantReport.productivity.green,
-      flower: flower || plantReport.productivity.flower,
-    };
+    // Check for an existing report for the current day
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+    let plantReport = await PlantReport.findOne({ createdAt: { $gte: currentDate } });
 
+
+    if (!plantReport) {
+      // Create a new PlantReport if no existing report found for today
+      plantReport = new PlantReport();
+    }
+
+    // Update the productivity data
+    plantReport.productivity = {
+      red: red,
+      yellow: yellow,
+      green: green,
+      flower: flower,
+      description: description,
+    };
     plantReport.expected = expected;
-    plantReport.description = description;
 
     await plantReport.save();
 
@@ -81,19 +87,26 @@ const logProductivity = async (req, res) => {
 
 
 const reportHealthStatus = async (req, res) => {
-  const { plantTag, pest, disease, defects } = req.body;
+  const { pest, disease, defects, description } = req.body;
 
   try {
-    let plantReport = await PlantReport.findOne({ plantTag });
+    // Check for an existing report for the current day
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+    let plantReport = await PlantReport.findOne({ createdAt: { $gte: currentDate } });
+
 
     if (!plantReport) {
-      plantReport = new PlantReport({ plantTag });
+      // Create a new PlantReport if no existing report found for today
+      plantReport = new PlantReport();
     }
 
+    // Update the health status data
     plantReport.healthStatus = {
-      pest: pest || plantReport.healthStatus.pest,
-      disease: disease || plantReport.healthStatus.disease,
-      defects: defects || plantReport.healthStatus.defects,
+      pest: pest || false,
+      disease: disease || false,
+      defects: defects || false,
+      description: description || '',
     };
 
     await plantReport.save();
@@ -103,7 +116,8 @@ const reportHealthStatus = async (req, res) => {
     console.error('Report health status error:', err);
     res.status(500).json({ error: 'Server error' });
   }
-};
+}; 
+ 
 
 const getPlantReports = async (req, res) => {
   try {

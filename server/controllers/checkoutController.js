@@ -1,3 +1,5 @@
+// controllers/checkoutController.js
+
 const Flutterwave = require('flutterwave-node-v3');
 const flw = new Flutterwave(process.env.FLUTTERWAVE_PUBLIC_KEY, process.env.FLUTTERWAVE_SECRET_KEY);
 const Cart = require('../models/Cart');
@@ -5,10 +7,12 @@ const Order = require('../models/Order');
 const User = require('../models/User');
 const Stock = require('../models/Stock');
 const Fee = require('../models/Fee');
+const { generateSalesReportData } = require('./salesReportController'); // Import generateSalesReportData directly
+const SalesReport = require('../models/SalesReport');
 
 exports.checkout = async (req, res) => {
     try {
-        const user = req.user; 
+        const user = req.user;
         const { paymentMethod, currency, cardDetails, transferDetails, deliveryAddressId } = req.body;
 
         const cart = await Cart.findOne({ user: user._id }).populate('items.item');
@@ -38,14 +42,16 @@ exports.checkout = async (req, res) => {
             }
         }
 
-        const fee = await Fee.findOne().sort({ _id: -1 });
+        const fee = await Fee.findOne().sort({ createdAt: -1 }); // Sort by createdAt in descending order to get the most recent fee
         if (!fee) {
             return res.status(404).json({ error: 'Fee not found' });
         }
 
         const { deliveryFee, taxRate } = fee;
         const subtotal = cart.total;
-        const total = subtotal + deliveryFee + (subtotal * taxRate); 
+        const taxAmount = subtotal * taxRate; // Calculate the tax amount based on a percentage
+        const total = subtotal + deliveryFee + taxAmount; // Add delivery fee and tax amount to the subtotal
+        
 
         let paymentPayload = {};
         let response = {};
@@ -57,7 +63,7 @@ exports.checkout = async (req, res) => {
                 expiry_month: cardDetails.expiry_month,
                 expiry_year: cardDetails.expiry_year,
                 currency: currency || 'NGN',
-                amount: total, 
+                amount: total,
                 fullname: userDetail.name,
                 phone_number: userDetail.phoneNumber,
                 email: userDetail.email,
@@ -67,19 +73,16 @@ exports.checkout = async (req, res) => {
             };
 
             response = await flw.Charge.card(paymentPayload);
-        }
-        else if (paymentMethod === 'transfer') {
+        } else if (paymentMethod === 'transfer') {
             paymentPayload = {
                 amount: total,
                 currency: currency || 'NGN',
                 account_bank: transferDetails.account_bank,
                 account_number: transferDetails.account_number
             };
-        
+
             response = await flw.Transfer.initiate(paymentPayload);
-        }
-        
-         else {
+        } else {
             return res.status(400).json({ error: 'Invalid payment method' });
         }
 
@@ -88,9 +91,10 @@ exports.checkout = async (req, res) => {
                 user: user._id,
                 items: cart.items,
                 total: total,
-                address: deliveryAddress, 
-                paymentMethod: paymentMethod, 
-                status: 'paid'
+                address: deliveryAddress,
+                paymentMethod: paymentMethod,
+                status: 'paid',
+                deliveryStatus: 'pending' 
             });
 
             await newOrder.save();
@@ -104,6 +108,27 @@ exports.checkout = async (req, res) => {
             }
 
             await Cart.findByIdAndDelete(cart._id);
+
+
+            // Generate the sales report directly within this function
+            try {
+                const newReportData = await generateSalesReportData();
+
+                // Fetch the last saved sales report from the database
+                const lastReport = await SalesReport.findOne().sort({ createdAt: -1 });
+
+                // Check if there's any change between the new report and the last saved report
+                const hasChanges = !lastReport || JSON.stringify(newReportData) !== JSON.stringify(lastReport.toObject());
+
+                if (hasChanges) {
+                    // Create a new sales report document and save it
+                    const newSalesReport = new SalesReport(newReportData);
+                    await newSalesReport.save();
+                }
+            } catch (err) {
+                console.error('Error generating sales report:', err);
+                // Handle report generation error if needed
+            }
 
             return res.status(200).json({ message: 'Payment processed successfully', data: response });
         } else {

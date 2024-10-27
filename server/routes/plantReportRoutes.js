@@ -9,3 +9,4 @@ router.post('/plant-report/health', authMiddleware, adminMiddleware, reportHealt
 router.get('/plant-report', authMiddleware, adminMiddleware, getPlantReports);
 
 module.exports = router;
+   

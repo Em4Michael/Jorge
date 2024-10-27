@@ -4,7 +4,7 @@ const validateSignup = require('../middlewares/validateSignup');
 
 const router = express.Router();
 
-router.post('/auth/signup', validateSignup, signup);
+router.post('/auth/signup', signup);  // Correct
 router.post('/auth/login', login);
 router.post('/auth/request-password-reset', requestPasswordReset);
 router.post('/auth/reset-password', resetPassword);
