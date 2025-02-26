@@ -139,3 +139,70 @@ exports.checkout = async (req, res) => {
         return res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+exports.updateOrderStatus = async (req, res) => {
+    try {
+      const { orderId, status, deliveryStatus } = req.body;
+      const user = req.user;
+  
+      // Valid statuses from the schema
+      const validStatuses = ['pending', 'paid', 'shipped', 'delivered', 'canceled'];
+      if (status && !validStatuses.includes(status)) {
+        return res.status(400).json({ error: 'Invalid status value' });
+      }
+      if (deliveryStatus && !validStatuses.includes(deliveryStatus)) {
+        return res.status(400).json({ error: 'Invalid delivery status value' });
+      }
+  
+      // Find the order
+      const order = await Order.findById(orderId).populate('user');
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+  
+      // Check permissions: only superadmin or order owner can update
+      if (user._id.toString() !== order.user._id.toString() && user.role !== 'superadmin') {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+  
+      // Update statuses if provided
+      if (status) order.status = status;
+      if (deliveryStatus) order.deliveryStatus = deliveryStatus;
+  
+      await order.save();
+  
+      // Optionally regenerate sales report if status changes affect it (e.g., from paid to canceled)
+      if (status && (status === 'canceled' || order.status === 'paid')) {
+        const newReportData = await generateSalesReportData();
+        const lastReport = await SalesReport.findOne().sort({ createdAt: -1 });
+        const hasChanges = !lastReport || JSON.stringify(newReportData) !== JSON.stringify(lastReport.toObject());
+  
+        if (hasChanges) {
+          const newSalesReport = new SalesReport(newReportData);
+          await newSalesReport.save();
+        }
+      }
+  
+      res.status(200).json({ message: 'Order status updated successfully', order });
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  };
+  
+ // controllers/checkoutController.js (add this function)
+exports.getOrders = async (req, res) => {
+    try {
+      const user = req.user;
+      let orders;
+      if (user.role === 'superadmin') {
+        orders = await Order.find().populate('user', 'name');
+      } else {
+        orders = await Order.find({ user: user._id }).populate('user', 'name');
+      }
+      res.status(200).json(orders);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  };

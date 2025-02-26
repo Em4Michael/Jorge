@@ -30,7 +30,7 @@ const updatePinState = async (pinName, state) => {
  
     await pinState.save(); 
 
-   // console.log(`Updating pin ${pinName} to state: ${state}`);
+    console.log(`Updating pin ${pinName} to state: ${state}`);
     return pinState;
   } catch (error) {
     console.error('Error updating pin state:', error.message);

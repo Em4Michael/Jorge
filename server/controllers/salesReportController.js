@@ -4,77 +4,80 @@ const User = require('../models/User');
 const Fee = require('../models/Fee');
 const PlantReport = require('../models/PlantReport');
 const Stock = require('../models/Stock');
-const { calculateExpected } = require('../utils/calculationUtils'); // import the function
 
 const generateSalesReportData = async () => {
-  // Fetch necessary data
+  // Total sales from paid orders
   const totalSalesResult = await Order.aggregate([
     { $match: { status: 'paid' } },
-    { $group: { _id: null, total: { $sum: '$total' } } }
+    { $group: { _id: null, total: { $sum: '$total' } } },
   ]);
-
-  // Handle missing data gracefully
   const totalSales = totalSalesResult.length ? totalSalesResult[0].total : 0;
 
   // Count total pending orders and total orders
   const totalPendingOrders = await Order.countDocuments({ deliveryStatus: 'pending' });
   const totalOrders = await Order.countDocuments();
 
-  // Group users by actual name and address from placed orders
-  const usersByNameData = await Order.aggregate([
+  // Sales by region (using address as region)
+  const salesByLocationData = await Order.aggregate([
     { $match: { status: 'paid' } },
-    { $group: { _id: '$user', name: { $first: '$user.name' }, count: { $sum: 1 } } }
+    { $group: { _id: '$address', totalSales: { $sum: '$total' }, count: { $sum: 1 } } },
   ]);
+  const usersByLocation = salesByLocationData.map(u => ({
+    address: u._id,
+    totalSales: u.totalSales,
+    count: u.count,
+  }));
 
-  const usersByLocationData = await Order.aggregate([
+  // Sales by salesperson (assuming user in Order is the salesperson)
+  const salesByNameData = await Order.aggregate([
     { $match: { status: 'paid' } },
-    { $group: { _id: '$address', count: { $sum: 1 } } }
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'userData',
+      },
+    },
+    { $unwind: '$userData' },
+    { $group: { _id: '$userData._id', name: { $first: '$userData.name' }, totalSales: { $sum: '$total' }, count: { $sum: 1 } } },
   ]);
+  const usersByName = salesByNameData.map(u => ({
+    name: u.name,
+    totalSales: u.totalSales,
+    count: u.count,
+  }));
 
-  // Map the aggregate results to desired structure
-  const usersByName = usersByNameData.map(u => ({ name: u.name, count: u.count }));
-  const usersByLocation = usersByLocationData.map(u => ({ address: u._id, count: u.count }));
-
-  // Calculate payment by method
+  // Payment by method
   const totalPaymentByMethod = await Order.aggregate([
     { $match: { status: 'paid' } },
-    { $group: { _id: '$paymentMethod', total: { $sum: '$total' } } }
+    { $group: { _id: '$paymentMethod', total: { $sum: '$total' } } },
   ]);
-
-  // Initialize payment method totals to avoid errors
   const paymentByMethod = { card: 0, transfer: 0 };
   totalPaymentByMethod.forEach(method => {
-    if (method && method._id) {
-      paymentByMethod[method._id] = method.total;
-    }
+    if (method && method._id) paymentByMethod[method._id] = method.total;
   });
 
-  // Get the most recent fee data
+  // Fee data
   const fee = await Fee.findOne().sort({ createdAt: -1 });
-  if (!fee) {
-    throw new Error('Fee data not found');
-  }
+  if (!fee) throw new Error('Fee data not found');
 
-  // Get the most recent PlantReport for predicted sales
+  // Plant report for predicted sales
   const lastPlantReport = await PlantReport.findOne().sort({ createdAt: -1 });
   const week1Amount = lastPlantReport ? lastPlantReport.expected.week1.amount : 0;
 
-  // Get the Stock data for totalPlantAmount and stemAmount
+  // Stock data
   const stock = await Stock.findOne().sort({ createdAt: -1 });
-  if (!stock) {
-    throw new Error('Stock data not found');
-  }
+  if (!stock) throw new Error('Stock data not found');
 
   const totalPlantAmount = stock.totalPlantAmount;
   const stemAmount = stock.stemAmount;
-
-  // Calculation parameters
   const fruitPerCarton = 100;
   const price = stock.pricePerCarton;
+
   const totalProduction = ((5 * totalPlantAmount * stemAmount) / fruitPerCarton) * price;
   const predictTotal = (week1Amount / fruitPerCarton) * price;
-
-  const taxAmount = predictTotal * fee.taxRate; 
+  const taxAmount = predictTotal * fee.taxRate;
   const total = predictTotal + fee.deliveryFee + taxAmount;
 
   const actualSales = totalSales;
@@ -94,24 +97,15 @@ const generateSalesReportData = async () => {
   };
 };
 
-
-// Controller to generate and save a new sales report
 const generateSalesReport = async (req, res) => {
   try {
-    // Generate new sales report data dynamically
     const newReportData = await generateSalesReportData();
-
-    // Fetch the last saved sales report from the database
     const lastReport = await SalesReport.findOne().sort({ createdAt: -1 });
-
-    // Check if there's any change between the new report and the last saved report
     const hasChanges = !lastReport || JSON.stringify(newReportData) !== JSON.stringify(lastReport.toObject());
 
     if (hasChanges) {
-      // Create a new sales report document and save it
       const newSalesReport = new SalesReport(newReportData);
       await newSalesReport.save();
-
       return res.status(201).json({ message: 'Sales report generated successfully', salesReport: newSalesReport });
     } else {
       return res.status(200).json({ message: 'No changes detected. Sales report not updated.' });
@@ -122,16 +116,10 @@ const generateSalesReport = async (req, res) => {
   }
 };
 
-// Controller to get the latest dynamically generated sales report and all saved reports
 const getSalesReports = async (req, res) => {
   try {
-    // Generate the most recent sales report data dynamically
     const recentReportData = await generateSalesReportData();
-
-    // Fetch saved sales reports
     const savedReports = await SalesReport.find().sort({ createdAt: -1 });
-
-    // Include the dynamically generated recent report as the most current
     res.status(200).json({ recentReport: recentReportData, savedReports });
   } catch (err) {
     console.error('Error fetching sales reports:', err);

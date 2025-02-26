@@ -1,29 +1,48 @@
+// sensorDataController.js
 const SensorData = require('../models/SensorData');
 
 exports.saveSensorData = async (data) => {
   try {
-    const { Date: date, Time: time, ...otherData } = data;
+    console.log('Attempting to save sensor data:', data);
 
-    // Split the date string and reformat it to 'MM/DD/YYYY'
-    const [day, month, year] = date.split('/');
-    const formattedDate = `${month}/${day}/${year}`;
+    const { Date: dateStr, Time, RN, UV, MO, TP, HM, HI, Access, Exist } = data;
 
-    // Create a valid timestamp using the formatted date and time
-    const timestamp = new Date(`${formattedDate} ${time}`);
+    // Handle date parsing
+    const [day, month, year] = dateStr.split('/');
+    const fullYear = year.length === 2 ? `20${year}` : year;
+    const formattedDate = `${month}/${day}/${fullYear}`;
+    console.log('Formatted date:', formattedDate);
+
+    // Use global Date constructor explicitly
+    const timestamp = new global.Date(`${formattedDate} ${Time}`);
+    console.log('Generated timestamp:', timestamp);
 
     if (isNaN(timestamp.getTime())) {
-      throw new Error('Invalid date or time format');
+      throw new Error(`Invalid date or time format: ${formattedDate} ${Time}`);
     }
 
-   // console.log('Received Sensor Data:', { ...otherData, Date: date, Time: time, timestamp });
+    const sensorData = new SensorData({
+      Date: dateStr,
+      Time,
+      RN: RN || 0,
+      UV: UV || 0,
+      MO: MO || 0,
+      TP: TP || 0,
+      HM: HM || 0,
+      HI: HI || 0,
+      Access: Access === 'null' ? null : Access,
+      Exist: Exist === false ? 'false' : Exist || null,
+      timestamp,
+    });
 
-    const sensorData = new SensorData({ ...otherData, Date: date, Time: time, timestamp });
+    console.log('Sensor data object prepared for save:', sensorData);
+
     const savedData = await sensorData.save();
-
-   // console.log('Saved Sensor Data:', savedData);
+    console.log('Sensor data successfully saved to database:', savedData);
 
     return savedData;
   } catch (error) {
-    throw new Error('Error saving sensor data: ' + error.message);
+    console.error('Error saving sensor data to database:', error.message, error.stack);
+    throw error;
   }
 };

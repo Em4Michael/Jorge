@@ -19,6 +19,6 @@ router.delete('/stock/:id', authMiddleware, superAdminMiddleware, deleteStock);
 router.get('/stock', getAllStock);
 router.get('/stock/:id', getStockById);
 router.get('/stock/productivity', getProductivityReport);
-
+ 
 
 module.exports = router;
